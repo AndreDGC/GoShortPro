@@ -29,6 +29,7 @@ def create_user():
     try:
         # Ejecuta el INSERT
         cursor.execute('''
+            \c goshort
             INSERT INTO goshort.pro.users (name, apple_id, subscription_type_id, user_count)
             VALUES (%s, %s, %s, %s)
             RETURNING user_id;
