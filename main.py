@@ -25,10 +25,13 @@ def create_user():
     if not name or not apple_id or subscription_type_id is None:
         return jsonify({"message": "Faltan datos obligatorios"}), 400
 
-    connection = get_db_connection()
-    cursor = connection.cursor()
+    connection = None
+    cursor = None
 
     try:
+        connection = get_db_connection()
+        cursor = connection.cursor()
+
         # Ejecuta el INSERT
         cursor.execute('''
             INSERT INTO goshort.pro.users (name, apple_id, subscription_type_id, user_count)
@@ -46,12 +49,15 @@ def create_user():
 
     except Exception as e:
         print(f"Error al crear el usuario: {e}")
-        connection.rollback()  # Revierte en caso de error
-        return jsonify({"message": "Error del servidor"}), 500
+        if connection:
+            connection.rollback()  # Revierte en caso de error
+        return jsonify({"message": "Error del servidor", "error": str(e)}), 500
 
     finally:
-        cursor.close()
-        connection.close()
+        if cursor is not None:
+            cursor.close()
+        if connection is not None:
+            connection.close()
 
 
 # GET USER
