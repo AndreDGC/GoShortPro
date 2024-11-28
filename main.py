@@ -188,6 +188,13 @@ def get_user_urls(user_id):
         connection.close()
 
 # agregado
+# Dominio base del acortador
+BASE_URL = "http://goshort.ly/"
+
+# Generar un identificador único para la URL
+def generate_short_link():
+    return uuid.uuid4().hex[:6]
+
 @app.route('/shorten', methods=['POST'])
 def shorten():
     data = request.get_json()
