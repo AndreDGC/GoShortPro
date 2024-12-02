@@ -99,8 +99,7 @@ def get_user_info(user_id):
             COALESCE(json_agg(json_build_object(
                 'url_id', url.url_id,
                 'destination', url.base_url,
-                'creation_date', url.creation_date::TEXT,
-                'visits', url.visits
+                'creation_date', url.creation_date::TEXT
             )) FILTER (WHERE url.url_id IS NOT NULL), '[]'::json) AS urls
         FROM goshort.pro.users u
         LEFT JOIN goshort.pro.url url 
