@@ -45,7 +45,8 @@ def create_user():
         # Confirma la transacción
         connection.commit()
 
-        return jsonify({"message": "Usuario creado exitosamente", "user_id": new_user_id}), 201
+        #return jsonify({"message": "Usuario creado exitosamente", "user_id": new_user_id}), 201
+        return jsonify(json.loads(json.dumps({"message": "Usuario creado exitosamente", "user_id": new_user_id}, indent=4))), 201
 
     except Exception as e:
         print(f"Error al crear el usuario: {e}")
