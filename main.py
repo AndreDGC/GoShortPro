@@ -30,9 +30,9 @@ def create_user():
         return jsonify({
             "status": "error",
             "code": 400,
-            "message": "Solicitud inválida. Verifique los datos ingresados.",
+            "message": "Invalid request. Please check the data entered.",
             "data": {
-                "faltan_datos": ["name", "apple_id", "password"]
+                "missing_data": ["name", "apple_id", "password"]
             }
         }), 400
 
@@ -66,7 +66,7 @@ def create_user():
         response_post_user = {
             "status": "success",
             "code": 201,
-            "message": "Usuario creado exitosamente",
+            "message": "User created successfully",
             "data": {
                 "user_id": new_user_id,
                 "apple_id": new_apple_id,
@@ -76,7 +76,7 @@ def create_user():
         return jsonify(response_post_user), 201
 
     except Exception as e:
-        print(f"Error al crear el usuario: {e}")
+        print(f"Error creating user: {e}")
         if connection:
             connection.rollback()  # Revierte en caso de error
 
@@ -85,10 +85,10 @@ def create_user():
             return jsonify({
                 "status": "error",
                 "code": 409,
-                "message": "El correo ya ha sido registrado."
+                "message": "The email has already been registered."
             }), 409
                         
-        return jsonify({"message": "Error del servidor", "error": str(e)}), 500
+        return jsonify({"message": "Server error", "error": str(e)}), 500
 
     finally:
         if cursor is not None:
@@ -139,7 +139,7 @@ def get_user_info(user_id):
         respose_get_user = {
             "status": "success",
             "code": 201,
-            "message": "Usuario consultado exitosamente",
+            "message": "User successfully consulted",
             "data": {
                 "user_id": user_data[0],
                 "email": user_data[1],
@@ -154,8 +154,8 @@ def get_user_info(user_id):
         return jsonify(respose_get_user), 200
 
     except Exception as e:
-        print(f"Error al obtener la información del usuario: {e}")
-        return jsonify({"message": "Error del servidor", "error": str(e)}), 500
+        print(f"Error getting user information: {e}")
+        return jsonify({"message": "Server error", "error": str(e)}), 500
 
     finally:
         # Asegúrate de cerrar el cursor y la conexión si fueron creados
@@ -175,7 +175,7 @@ def login_user():
     password = data.get('password')
 
     if not email or not password:
-        return jsonify({"message": "Email y contraseña son requeridos"}), 400
+        return jsonify({"message": "Email and password are required"}), 400
 
     connection = None
     cursor = None
@@ -195,7 +195,7 @@ def login_user():
 
         # Verificar si el usuario existe
         if user_data is None:
-            return jsonify({"message": "Credenciales inválidas"}), 401
+            return jsonify({"message": "Invalid credentials"}), 401
 
         user_id, password_hash_base64, name, subscription_type_id = user_data
 
@@ -204,13 +204,13 @@ def login_user():
 
         # Verificar la contraseña
         if not bcrypt.checkpw(password.encode('utf-8'), password_hash):
-            return jsonify({"message": "Credenciales inválidas"}), 401
+            return jsonify({"message": "Invalid credentials"}), 401
 
         # Crear un diccionario para la respuesta JSON
         response_login = {
             "status": "success",
             "code": 200,
-            "message": "Inicio de sesión exitoso",
+            "message": "Login successful",
             "data": {
                 "user_id": user_id,
                 "email": email,
@@ -221,8 +221,8 @@ def login_user():
         return jsonify(response_login), 200
 
     except Exception as e:
-        print(f"Error al iniciar sesión: {e}")
-        return jsonify({"message": "Error del servidor", "error": str(e)}), 500
+        print(f"Error logging in: {e}")
+        return jsonify({"message": "Server error", "error": str(e)}), 500
 
     finally:
         # Asegúrate de cerrar el cursor y la conexión si fueron creados
@@ -245,7 +245,7 @@ def create_url():
 
     # Verifica que los datos necesarios estén presentes
     if not name_url or not destination or user_id is None:
-        return jsonify({"message": "Faltan datos obligatorios"}), 400
+        return jsonify({"message": "Mandatory data missing"}), 400
 
     connection = None
     cursor = None
@@ -267,13 +267,13 @@ def create_url():
         # Confirma la transacción
         connection.commit()
 
-        return jsonify({"message": "URL creada exitosamente", "url_id": new_url_id}), 201
+        return jsonify({"message": "URL created successfully", "url_id": new_url_id}), 201
 
     except Exception as e:
         print(f"Error al crear la URL: {e}")
         if connection:
             connection.rollback()  # Revierte en caso de error
-        return jsonify({"message": "Error del servidor", "error": str(e)}), 500
+        return jsonify({"message": "Server error", "error": str(e)}), 500
 
     finally:
         if cursor is not None:
@@ -305,7 +305,7 @@ def get_user_url(user_id, url_id):
             return jsonify({
                 "status": "error",
                 "code": 404,
-                "message": "URL no encontrada para este usuario",
+                "message": "URL not found for this user",
                 "data": None
             }), 404
 
@@ -326,15 +326,15 @@ def get_user_url(user_id, url_id):
         return jsonify({
             "status": "success",
             "code": 302,
-            "message": "Redireccionando a la URL original",
+            "message": "Redirecting to the original URL",
             "data": {
                 "destination": url[0]  # Suponiendo que url[0] contiene la URL original
             }
         }), 302
 
     except Exception as e:
-        print(f"Error al obtener la URL del usuario: {e}")
-        return jsonify({"status": "error", "code": 500, "message": "Error del servidor", "error": str(e)}), 500
+        print(f"Error getting user URL: {e}")
+        return jsonify({"status": "error", "code": 500, "message": "Server error", "error": str(e)}), 500
 
     finally:
         cursor.close()
@@ -356,7 +356,7 @@ def upgrade_subscription(user_id):
             return jsonify({
                 "status": "error",
                 "code": 400,
-                "message": "Solicitud invalida. Verifique los datos ingresados.",
+                "message": "Invalid request. Please check the data entered.",
                 "data": None
             }), 400
 
@@ -397,7 +397,7 @@ def upgrade_subscription(user_id):
             return jsonify({
                 "status": "error",
                 "code": 404,
-                "message": f"No se encontro la suscripcion del usuario con id: {user_id}",
+                "message": f"Subscription for user not found, id: {user_id}",
                 "data": None
             }), 404
 
@@ -415,7 +415,7 @@ def upgrade_subscription(user_id):
         return jsonify({
             "status": "success",
             "code": 200,
-            "message": f"Usuario actualizado a {subscription_desc} exitosamente",
+            "message": f"User upgraded to {subscription_desc} successfully",
             "data": {
                 "user_id": user_id,
                 "subscription_type_id": subscription_type_id,
@@ -429,8 +429,8 @@ def upgrade_subscription(user_id):
         }), 200
 
     except Exception as e:
-        print(f"Error al actualizar la suscripcion del usuario: {e}")
-        return jsonify({"status": "error", "code": 500, "message": "Error del servidor", "error": str(e)}), 500
+        print(f"Error updating user subscription: {e}")
+        return jsonify({"status": "error", "code": 500, "message": "Server error", "error": str(e)}), 500
 
     finally:
         cursor.close()
@@ -465,7 +465,7 @@ def get_url_analytics(user_id, url_id):
             return jsonify({
                 "status": "error",
                 "code": 404,
-                "message": "Analiticas no encontradas para esta URL",
+                "message": "Analytics not found for this URL",
                 "data": None
             }), 404
 
@@ -485,13 +485,13 @@ def get_url_analytics(user_id, url_id):
         return jsonify({
             "status": "success",
             "code": 200,
-            "message": "Analiticas de URL obtenidas exitosamente",
+            "message": "URL analytics successfully obtained",
             "data": response_data
         }), 200
 
     except Exception as e:
-        print(f"Error al obtener las analiticas de la URL: {e}")
-        return jsonify({"status": "error", "code": 500, "message": "Error del servidor", "error": str(e)}), 500
+        print(f"Error getting analytics from URL: {e}")
+        return jsonify({"status": "error", "code": 500, "message": "Server error", "error": str(e)}), 500
 
     finally:
         cursor.close()
