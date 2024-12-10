@@ -1,3 +1,4 @@
+import bcrypt
 import psycopg2
 from flask import Flask, request, jsonify
 from datetime import datetime, timedelta
@@ -19,19 +20,23 @@ def create_user():
     # Extrae los valores del JSON
     name = data.get('name')
     apple_id = data.get('apple_id')
+    password = data.get('password')
     subscription_type_id = data.get('subscription_type_id', 0)  # Valor predeterminado es 0 (free)
     user_count = data.get('user_count', 1)  # Opcional: valor por defecto
 
     # Verifica que los datos necesarios estén presentes
-    if not name or not apple_id:
+    if not name or not apple_id or not password:
         return jsonify({
             "status": "error",
             "code": 400,
-            "message": "Solicitud invalida. Verifique los datos ingresados.",
+            "message": "Solicitud inválida. Verifique los datos ingresados.",
             "data": {
-                "faltan_datos": ["name", "apple_id"]
+                "faltan_datos": ["name", "apple_id", "password"]
             }
         }), 400
+
+    # Hash de la contraseña
+    hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
 
     connection = None
     cursor = None
@@ -42,10 +47,10 @@ def create_user():
 
         # Ejecuta el INSERT
         cursor.execute('''
-            INSERT INTO goshort.pro.users (name, apple_id, subscription_type_id)
-            VALUES (%s, %s, %s)
+            INSERT INTO goshort.pro.users (name, apple_id, password, subscription_type_id)
+            VALUES (%s, %s, %s, %s)
             RETURNING user_id, apple_id, name;
-        ''', (name, apple_id, subscription_type_id))
+        ''', (name, apple_id, hashed_password, subscription_type_id))
         
         # Obtén el ID del nuevo usuario insertado
         new_user_id, new_apple_id, new_name = cursor.fetchone()
@@ -70,6 +75,15 @@ def create_user():
         print(f"Error al crear el usuario: {e}")
         if connection:
             connection.rollback()  # Revierte en caso de error
+
+        # Manejo específico para errores de clave duplicada
+        if "duplicate key value violates unique constraint" in str(e):
+            return jsonify({
+                "status": "error",
+                "code": 409,
+                "message": "El correo ya ha sido registrado."
+            }), 409
+                        
         return jsonify({"message": "Error del servidor", "error": str(e)}), 500
 
     finally:
@@ -77,6 +91,7 @@ def create_user():
             cursor.close()
         if connection is not None:
             connection.close()
+
 
 
 # GET USER

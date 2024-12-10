@@ -7,3 +7,4 @@ MarkupSafe==1.1.1
 Werkzeug==1.0.1
 psycopg2-binary==2.9.7
 Werkzeug<2.1.0 # agregado
+bcrypt==4.2.1 # agregado 10 Dic
