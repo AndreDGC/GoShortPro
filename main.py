@@ -1,4 +1,5 @@
 import bcrypt
+import base64
 import psycopg2
 from flask import Flask, request, jsonify
 from datetime import datetime, timedelta
@@ -38,6 +39,9 @@ def create_user():
     # Hash de la contraseña
     hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
 
+    # Convertir el hash a Base64
+    hashed_password_base64 = base64.b64encode(hashed_password).decode('utf-8')
+
     connection = None
     cursor = None
 
@@ -50,7 +54,7 @@ def create_user():
             INSERT INTO goshort.pro.users (name, apple_id, password, subscription_type_id)
             VALUES (%s, %s, %s, %s)
             RETURNING user_id, apple_id, name;
-        ''', (name, apple_id, hashed_password, subscription_type_id))
+        ''', (name, apple_id, hashed_password_base64, subscription_type_id))
         
         # Obtén el ID del nuevo usuario insertado
         new_user_id, new_apple_id, new_name = cursor.fetchone()
