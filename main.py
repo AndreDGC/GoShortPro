@@ -160,6 +160,73 @@ def get_user_info(user_id):
         if connection is not None:
             connection.close()
 
+### 
+# EP LOGIN
+# Endpoint para iniciar sesión
+@app.route('/user/login', methods=['POST'])
+def login_user():
+    # Obtener los datos del cuerpo de la solicitud
+    data = request.get_json()
+    email = data.get('email')
+    password = data.get('password')
+
+    if not email or not password:
+        return jsonify({"message": "Email y contraseña son requeridos"}), 400
+
+    connection = None
+    cursor = None
+
+    try:
+        connection = get_db_connection()
+        cursor = connection.cursor()
+
+        # Consulta para obtener el usuario por email
+        cursor.execute('''
+        SELECT user_id, password_hash, name, subscription_type_id
+        FROM goshort.pro.users
+        WHERE email = %s
+        ''', (email,))
+        
+        user_data = cursor.fetchone()
+
+        # Verificar si el usuario existe
+        if user_data is None:
+            return jsonify({"message": "Credenciales inválidas"}), 401
+
+        user_id, password_hash, name, subscription_type_id = user_data
+
+        # Verificar la contraseña
+        if not check_password_hash(password_hash, password):
+            return jsonify({"message": "Credenciales inválidas"}), 401
+
+        # Crear un diccionario para la respuesta JSON
+        response_login = {
+            "status": "success",
+            "code": 200,
+            "message": "Inicio de sesión exitoso",
+            "data": {
+                "user_id": user_id,
+                "email": email,
+                "name": name,
+                "subscription_type_id": subscription_type_id,
+            },
+        }
+        return jsonify(response_login), 200
+
+    except Exception as e:
+        print(f"Error al iniciar sesión: {e}")
+        return jsonify({"message": "Error del servidor", "error": str(e)}), 500
+
+    finally:
+        # Asegúrate de cerrar el cursor y la conexión si fueron creados
+        if cursor is not None:
+            cursor.close()
+        if connection is not None:
+            connection.close()            
+
+###
+
+
 # POST URL (Deprecado, ahora se postea por RANDOM)
 @app.route('/urls', methods=['POST'])
 def create_url():
