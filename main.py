@@ -188,7 +188,7 @@ def login_user():
         cursor.execute('''
         SELECT user_id, password, name, subscription_type_id
         FROM goshort.pro.users
-        WHERE apple_id = %s  -- Cambia esto si el email no es el apple_id
+        WHERE apple_id = %s
         ''', (email,))
         
         user_data = cursor.fetchone()
@@ -197,10 +197,13 @@ def login_user():
         if user_data is None:
             return jsonify({"message": "Credenciales inválidas"}), 401
 
-        user_id, password_hash, name, subscription_type_id = user_data
+        user_id, password_hash_base64, name, subscription_type_id = user_data
+
+        # Decodificar el hash de base64 a binario
+        password_hash = base64.b64decode(password_hash_base64)
 
         # Verificar la contraseña
-        if not bcrypt.checkpw(password.encode('utf-8'), password_hash.encode('utf-8')):
+        if not bcrypt.checkpw(password.encode('utf-8'), password_hash):
             return jsonify({"message": "Credenciales inválidas"}), 401
 
         # Crear un diccionario para la respuesta JSON
@@ -227,7 +230,6 @@ def login_user():
             cursor.close()
         if connection is not None:
             connection.close()
-
 ###
 
 
