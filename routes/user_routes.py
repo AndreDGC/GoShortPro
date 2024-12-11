@@ -152,7 +152,7 @@ def get_user_info(user_id):
 
         return create_response(200, "success", "User successfully consulted", {
             "user_id": user_data[0],
-            "email": user_data[1],
+            "apple_id": user_data[1],
             "name": user_data[2],
             "type": user_data[3],
             "urls": user_data[4]
