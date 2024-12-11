@@ -1,5 +1,7 @@
 from flask import Flask, jsonify
-from routes import user_routes, subscription_routes, analytics_routes
+from routes.user_routes import user_routes
+from routes.subscription_routes import subscription_routes
+from routes.analytics_routes import analytics_routes
 from db import get_db_connection
 
 app = Flask(__name__)
