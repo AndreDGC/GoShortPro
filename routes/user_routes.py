@@ -19,7 +19,7 @@ def create_user():
             "code": 400,
             "message": "Invalid request. Please check the data entered.",
             "data": {
-                "missing_data": [field for field in ['name', 'apple_id', 'password'] if not locals()[field]]
+                "missing_data": ["name", "apple_id", "password"]
             }
         }), 400
 
@@ -42,7 +42,7 @@ def create_user():
         new_user_id, new_apple_id, new_name = cursor.fetchone()
         connection.commit()
 
-        return jsonify({
+        response_post_user = {
             "status": "success",
             "code": 201,
             "message": "User  created successfully",
@@ -51,7 +51,8 @@ def create_user():
                 "apple_id": new_apple_id,
                 "name": new_name,
             }
-        }), 201
+        }
+        return jsonify(response_post_user), 201
 
     except Exception as e:
         print(f"Error creating user: {e}")
@@ -62,16 +63,10 @@ def create_user():
             return jsonify({
                 "status": "error",
                 "code": 409,
-                "message": "The email has already been registered.",
-                "data": None
+                "message": "The email has already been registered."
             }), 409
 
-        return jsonify({
-            "status": "error",
-            "code": 500,
-            "message": "Server error",
-            "data": str(e)
-        }), 500
+        return jsonify({"message": "Server error", "error": str(e)}), 500
 
     finally:
         if cursor is not None:
@@ -86,12 +81,7 @@ def login_user():
     password = data.get('password')
 
     if not email or not password:
-        return jsonify({
-            "status": "error",
-            "code": 400,
-            "message": "Email and password are required",
-            "data": None
-        }), 400
+        return jsonify({"message": "Email and password are required"}), 400
 
     connection = None
     cursor = None
@@ -109,44 +99,30 @@ def login_user():
         user_data = cursor.fetchone()
 
         if user_data is None:
-            return jsonify({
-                "status": "error",
-                "code": 401,
-                "message": "Invalid credentials",
-                "data": None
-            }), 401
+            return jsonify({"message": "Invalid credentials"}), 401
 
         user_id, password_hash_base64, name, subscription_type_id = user_data
         password_hash = base64.b64decode(password_hash_base64)
 
         if not bcrypt.checkpw(password.encode('utf-8'), password_hash):
-            return jsonify({
-                "status": "error",
-                "code": 401,
-                "message": "Invalid credentials",
-                "data": None
-            }), 401
+            return jsonify({"message": "Invalid credentials"}), 401
 
-        return jsonify({
+        response_login = {
             "status": "success",
             "code": 200,
-            "message": " Login successful",
+            "message": "Login successful",
             "data": {
                 "user_id": user_id,
                 "email": email,
                 "name": name,
                 "subscription_type_id": subscription_type_id,
             },
-        }), 200
+        }
+        return jsonify(response_login), 200
 
     except Exception as e:
         print(f"Error logging in: {e}")
-        return jsonify({
-            "status": "error",
-            "code": 500,
-            "message": "Server error",
-            "data": str(e)
-        }), 500
+        return jsonify({"message": "Server error", "error": str(e)}), 500
 
     finally:
         if cursor is not None:
@@ -186,20 +162,15 @@ def get_user_info(user_id):
         user_data = cursor.fetchone()
 
         if user_data is None:
-            return jsonify({
-                "status": "error",
-                "code": 404,
-                "message": "User  not found",
-                "data": None
-            }), 404
+            return jsonify({"message": "User  not found"}), 404
 
         response_get_user = {
             "status": "success",
-            "code": 200,
-            "message": "User successfully consulted",
+            "code": 201,
+            "message": "User  successfully consulted",
             "data": {
                 "user_id": user_data[0],
-                "apple_id": user_data[1],
+                "email": user_data[1],
                 "name": user_data[2],
                 "type": user_data[3],
                 "urls": user_data[4],
@@ -209,12 +180,7 @@ def get_user_info(user_id):
 
     except Exception as e:
         print(f"Error getting user information: {e}")
-        return jsonify({
-            "status": "error",
-            "code": 500,
-            "message": "Server error",
-            "data": str(e)
-        }), 500
+        return jsonify({"message": "Server error", "error": str(e)}), 500
 
     finally:
         if cursor is not None:
