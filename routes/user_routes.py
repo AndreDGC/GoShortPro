@@ -5,6 +5,14 @@ import base64
 
 user_routes = Blueprint('user_routes', __name__)
 
+def create_response(code, status, message, data=None):
+    return jsonify({
+        "code": code,
+        "status": status,
+        "message": message,
+        "data": data if data else {}
+    }), code
+
 @user_routes.route('/user', methods=['POST'])
 def create_user():
     data = request.get_json()
@@ -14,14 +22,8 @@ def create_user():
     subscription_type_id = data.get('subscription_type_id', 0)
 
     if not name or not apple_id or not password:
-        return jsonify({
-            "status": "error",
-            "code": 400,
-            "message": "Invalid request. Please check the data entered.",
-            "data": {
-                "missing_data": ["name", "apple_id", "password"]
-            }
-        }), 400
+        missing_data = [field for field in ["name", "apple_id", "password"] if not data.get(field)]
+        return create_response(400, "error", "Invalid request. Please check the data entered.", {"missing_data": missing_data})
 
     hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
     hashed_password_base64 = base64.b64encode(hashed_password).decode('utf-8')
@@ -42,17 +44,11 @@ def create_user():
         new_user_id, new_apple_id, new_name = cursor.fetchone()
         connection.commit()
 
-        response_post_user = {
-            "status": "success",
-            "code": 201,
-            "message": "User  created successfully",
-            "data": {
-                "user_id": new_user_id,
-                "apple_id": new_apple_id,
-                "name": new_name,
-            }
-        }
-        return jsonify(response_post_user), 201
+        return create_response(201, "success", "User created successfully", {
+            "user_id": new_user_id,
+            "apple_id": new_apple_id,
+            "name": new_name
+        })
 
     except Exception as e:
         print(f"Error creating user: {e}")
@@ -60,13 +56,9 @@ def create_user():
             connection.rollback()
 
         if "duplicate key value violates unique constraint" in str(e):
-            return jsonify({
-                "status": "error",
-                "code": 409,
-                "message": "The email has already been registered."
-            }), 409
+            return create_response(409, "error", "The email has already been registered.")
 
-        return jsonify({"message": "Server error", "error": str(e)}), 500
+        return create_response(500, "error", "Server error", {"error": str(e)})
 
     finally:
         if cursor is not None:
@@ -81,7 +73,7 @@ def login_user():
     password = data.get('password')
 
     if not email or not password:
-        return jsonify({"message": "Email and password are required"}), 400
+        return create_response(400, "error", "Email and password are required")
 
     connection = None
     cursor = None
@@ -99,30 +91,24 @@ def login_user():
         user_data = cursor.fetchone()
 
         if user_data is None:
-            return jsonify({"message": "Invalid credentials"}), 401
+            return create_response(401, "error", "Invalid credentials")
 
         user_id, password_hash_base64, name, subscription_type_id = user_data
         password_hash = base64.b64decode(password_hash_base64)
 
         if not bcrypt.checkpw(password.encode('utf-8'), password_hash):
-            return jsonify({"message": "Invalid credentials"}), 401
+            return create_response(401, "error", "Invalid credentials")
 
-        response_login = {
-            "status": "success",
-            "code": 200,
-            "message": "Login successful",
-            "data": {
-                "user_id": user_id,
-                "email": email,
-                "name": name,
-                "subscription_type_id": subscription_type_id,
-            },
-        }
-        return jsonify(response_login), 200
+        return create_response(200, "success", "Login successful", {
+            "user_id": user_id,
+            "email": email,
+            "name": name,
+            "subscription_type_id": subscription_type_id
+        })
 
     except Exception as e:
         print(f"Error logging in: {e}")
-        return jsonify({"message": "Server error", "error": str(e)}), 500
+        return create_response(500, "error", "Server error", {"error": str(e)})
 
     finally:
         if cursor is not None:
@@ -162,25 +148,19 @@ def get_user_info(user_id):
         user_data = cursor.fetchone()
 
         if user_data is None:
-            return jsonify({"message": "User  not found"}), 404
+            return create_response(404, "error", "User not found")
 
-        response_get_user = {
-            "status": "success",
-            "code": 201,
-            "message": "User  successfully consulted",
-            "data": {
-                "user_id": user_data[0],
-                "email": user_data[1],
-                "name": user_data[2],
-                "type": user_data[3],
-                "urls": user_data[4],
-            },
-        }
-        return jsonify(response_get_user), 200
+        return create_response(200, "success", "User successfully consulted", {
+            "user_id": user_data[0],
+            "email": user_data[1],
+            "name": user_data[2],
+            "type": user_data[3],
+            "urls": user_data[4]
+        })
 
     except Exception as e:
         print(f"Error getting user information: {e}")
-        return jsonify({"message": "Server error", "error": str(e)}), 500
+        return create_response(500, "error", "Server error", {"error": str(e)})
 
     finally:
         if cursor is not None:
